@@ -8,7 +8,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-func homehandler(w http.ResponseWriter, r *http.Request, p httprouter.Params) {		//首頁
+func homehandler(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //首頁
 	t, e := template.ParseFiles("./templates/home.html")
 	if e != nil {
 		log.Printf("Parsing template home.html error: %s", e)
