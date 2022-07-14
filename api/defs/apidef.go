@@ -2,13 +2,13 @@ package defs
 
 //requests
 type UserCredential struct {
-	Username string `json:"username"`
+	Username string `json:"user_name"`
 	Pwd      string `json:"pwd"`
 }
 
 type NewComment struct {
 	AuthorId int    `json:"author_id"`
-	Content  string `json:"content"`
+	Content  string `json:"contents"`
 }
 
 type NewVideo struct {
@@ -47,26 +47,29 @@ type Comments struct {
 // Data model
 
 type User struct {
-	Id        int
-	LoginName string
+	User_id   int
+	User_name string
 	Pwd       string
 }
 
 type VideoInfo struct {
-	Id           string `json:"id"`
-	AuthorId     int    `json:"author_id"`
-	Name         string `json:"name"`
-	DisplayCtime string `json:"display_ctime"`
+	Video_id      int
+	Author_name   string `json:"author_name"`
+	Video_title   string `json:"video_title"`
+	Display_ctime string `json:"display_ctime"`
+	Create_time   string `json:"create_time"`
 }
 
 type Comment struct {
-	Id      string `json:"id"`
-	VideoId string `json:"video_id"`
-	Author  string `json:"author"`
-	Content string `json:"content"`
+	Comment_id  int 
+	Video_title string `json:"video_title"`
+	User_name   string `json:"user_name"`
+	Content     string `json:"content"`
+	Record_time string `json:"record_time"`
 }
 
 type SimpleSession struct {
-	Username string // login name
-	TTL      int64
+	Session_id int
+	TTL        int64
+	User_id    int
 }
