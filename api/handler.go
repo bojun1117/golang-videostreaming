@@ -22,7 +22,7 @@ func homehandler(w http.ResponseWriter, r *http.Request, p httprouter.Params) { 
 	t.Execute(w, "home.html")
 }
 
-func createUser(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func createUser(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //創建使用者
 	res := []byte(`{
 		"user_name":"bojun",
 		"pwd":"eric1117"
@@ -36,4 +36,19 @@ func createUser(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		sendErrorResponse(w, defs.ErrorDBError)
 		return
 	}
+}
+
+func login(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //登入
+	ubody := &defs.UserCredential{
+		Username: "bojun",
+		Pwd:      "eric1117",
+	}
+	uname := p.ByName("username")
+	userID, err := dbops.GetUserCredential(ubody.Username, ubody.Pwd)
+	if err != nil || uname != ubody.Username{
+		sendErrorResponse(w, defs.ErrorNotAuthUser)
+		return
+	}
+	log.Printf("Login userID: %d", userID)
+	return
 }

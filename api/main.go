@@ -24,6 +24,7 @@ func RegisterHandlers() *httprouter.Router { //API控制
 	router := httprouter.New()
 	router.GET("/", homehandler)
 	router.GET("/user", createUser)
+	router.GET("/user/:username", login)
 	router.ServeFiles("/statics/*filepath", http.Dir("./templates"))
 	return router
 }

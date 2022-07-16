@@ -2,7 +2,6 @@ package dbops
 
 import (
 	"database/sql"
-	"log"
 
 	_ "github.com/lib/pq"
 )
@@ -11,14 +10,6 @@ var (
 	db  *sql.DB
 	err error
 )
-
-func init() {
-	connStr := "user=postgres password=eric dbname=postgres sslmode=disable"
-	db, err = sql.Open("postgres", connStr)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
 
 func CheckErr(err error) {
 	if err != nil {
@@ -33,4 +24,14 @@ func AddUserCredential(username string, pwd string) error {
 	CheckErr(err)
 	stmtIns.Close()
 	return nil
+}
+
+func GetUserCredential(username string, pwd string) (int, error) {
+	stmtOut, err := db.Prepare("SELECT user_id FROM users WHERE user_name=$1 AND pwd=$2")
+	CheckErr(err)
+	var userID int
+	err = stmtOut.QueryRow(username, pwd).Scan(&userID)
+	CheckErr(err)
+	defer stmtOut.Close()
+	return userID, nil
 }
