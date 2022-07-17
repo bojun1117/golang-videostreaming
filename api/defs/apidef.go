@@ -23,12 +23,8 @@ type SignedUp struct {
 }
 
 type UserSession struct {
-	Username  string `json:"user_name"`
+	UserID  int `json:"user_id"`
 	SessionId string `json:"session_id"`
-}
-
-type UserInfo struct {
-	Id int `json:"id"`
 }
 
 type SignedIn struct {

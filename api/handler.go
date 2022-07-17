@@ -44,11 +44,25 @@ func login(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //登�
 		Pwd:      "eric1117",
 	}
 	uname := p.ByName("username")
-	userID, err := dbops.GetUserCredential(ubody.Username, ubody.Pwd)
+	user_id,err := dbops.GetUserCredential(ubody.Username, ubody.Pwd)
 	if err != nil || uname != ubody.Username{
 		sendErrorResponse(w, defs.ErrorNotAuthUser)
 		return
 	}
-	log.Printf("Login userID: %d", userID)
+	ui := &defs.UserSession{
+		UserID: user_id,
+	}
+	_ = ui
+	return
+}
+
+func getUserInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params){		//取得使用者資訊
+	u, err := dbops.GetUser(3)
+	if err != nil {
+		log.Printf("Erorr in GetUserinfo: %s", err)
+		sendErrorResponse(w, defs.ErrorDBError)
+		return
+	}
+	_ = u
 	return
 }
