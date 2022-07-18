@@ -1,64 +1,53 @@
 package session
 
 import (
-	"sync"
-	"time"
-	"video-streaming/api/dbops"
+	"net/http"
 	"video-streaming/api/defs"
-	"video-streaming/api/utils"
+
+	"github.com/gorilla/sessions"
 )
 
-var sessionMap *sync.Map
+var store *sessions.CookieStore
 
 func init() {
-	sessionMap = &sync.Map{}
+	store = sessions.NewCookieStore([]byte("secret-key"))
 }
 
-func noInMilli() int64 {
-	return time.Now().UnixNano() / 1000000
-}
-
-func deleteExpiredSession(sid string) {
-	sessionMap.Delete(sid)
-	dbops.DeleteSession(sid)
-}
-
-func LoadSessionsFromDB() {
-	r, err := dbops.RetrieveAllSessions()
+func CheckSessionExist(w http.ResponseWriter, r *http.Request,username string) bool{//確認session存在
+	session, err := store.Get(r, username)
 	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return false
+	}
+	if session.Values["auth"] == true{
+		return true
+	}
+	return false
+}
+
+func RegisterSessionInfo(w http.ResponseWriter, r *http.Request,username string) { //註冊session
+	session, err := store.New(r, username)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	r.Range(func(k, v interface{}) bool {
-		ss := v.(*defs.SimpleSession)
-		sessionMap.Store(k, ss)
-		return true
-	})
-}
-
-func GenerateNewSessionId(un string) string {
-	id, _ := utils.NewUUID()
-	ct := noInMilli()
-	ttl := ct + 30*60*1000 // Server side session valid time: 30 min
-
-	ss := &defs.SimpleSession{Username: un, TTL: ttl}
-	sessionMap.Store(id, ss)
-	dbops.InsertSession(id, ttl, un)
-
-	return id
-}
-
-func IsSessionExpired(sid string) (string, bool) {
-	ss, ok := sessionMap.Load(sid)
-	if ok {
-		ct := noInMilli()
-		if ss.(*defs.SimpleSession).TTL < ct {
-			deleteExpiredSession(sid)
-			return "", true
-		}
-
-		return ss.(*defs.SimpleSession).Username, false
+	session.Values["user_name"] = username
+	session.Values["auth"] = true
+	err = session.Save(r, w)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
+}
 
-	return "", true
+func GetSessionInfo(w http.ResponseWriter, r *http.Request,uname string) *defs.SessionInfo { //取得session資訊
+	session, err := store.Get(r,uname)
+	si := &defs.SessionInfo{
+		User_name: session.Values["user_name"].(string),
+		Auth: session.Values["auth"].(bool),
+	}
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+	return si
 }

@@ -2,12 +2,14 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 
 	"video-streaming/api/dbops"
 	"video-streaming/api/defs"
+	"video-streaming/api/session"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -44,25 +46,35 @@ func login(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //登�
 		Pwd:      "eric1117",
 	}
 	uname := p.ByName("username")
-	user_id,err := dbops.GetUserCredential(ubody.Username, ubody.Pwd)
-	if err != nil || uname != ubody.Username{
+	err := dbops.GetUserCredential(ubody.Username, ubody.Pwd)
+	if err != nil || uname != ubody.Username {
 		sendErrorResponse(w, defs.ErrorNotAuthUser)
 		return
 	}
-	ui := &defs.UserSession{
-		UserID: user_id,
+	if session.CheckSessionExist(w, r, ubody.Username) == true {
+		return
 	}
-	_ = ui
+	session.RegisterSessionInfo(w, r, ubody.Username)
 	return
 }
 
-func getUserInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params){		//取得使用者資訊
-	u, err := dbops.GetUser(3)
+func getUserInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //取得使用者資訊
+	uname := p.ByName("username")
+	u, err := dbops.GetUser(uname)
 	if err != nil {
 		log.Printf("Erorr in GetUserinfo: %s", err)
 		sendErrorResponse(w, defs.ErrorDBError)
 		return
 	}
-	_ = u
+	fmt.Println(u)
+	return
+}
+
+func addNewVideo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //新增影片
+	err := dbops.AddNewVideo("bojun", "a to b to c")
+	if err != nil {
+		log.Printf("Erorr in GetUserinfo: %s", err)
+		return
+	}
 	return
 }
