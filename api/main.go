@@ -26,7 +26,9 @@ func RegisterHandlers() *httprouter.Router { //API控制
 	router.GET("/user", createUser)
 	router.POST("/user/:username", login)
 	router.GET("/user/:username", getUserInfo)
-	router.GET("/user/:username/videos", addNewVideo)
+	router.POST("/user/:username/videos", addNewVideo)
+	router.GET("/user/:username/videos", listAllVideos)
+	router.DELETE("/user/:username/videos/:vid", deleteVideo)
 	router.ServeFiles("/statics/*filepath", http.Dir("./templates"))
 	return router
 }

@@ -13,7 +13,7 @@ func init() {
 	store = sessions.NewCookieStore([]byte("secret-key"))
 }
 
-func CheckSessionExist(w http.ResponseWriter, r *http.Request,username string) bool{//確認session存在
+func ValidateUser(w http.ResponseWriter, r *http.Request,username string) bool{//確認session存在
 	session, err := store.Get(r, username)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -26,7 +26,7 @@ func CheckSessionExist(w http.ResponseWriter, r *http.Request,username string) b
 }
 
 func RegisterSessionInfo(w http.ResponseWriter, r *http.Request,username string) { //註冊session
-	session, err := store.New(r, username)
+	session, err := store.Get(r, username)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

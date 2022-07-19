@@ -34,10 +34,11 @@ type User struct {
 }
 
 type VideoInfo struct {
-	Video_id      int
-	Author_name   string `json:"author_name"`
-	Video_title   string `json:"video_title"`
-	Create_time   string `json:"create_time"`
+	Video_id    int
+	Author_name string `json:"author_name"`
+	Video_title string `json:"video_title"`
+	Create_time string `json:"create_time"`
+	Viewed      int    `json:"Viewed"`
 }
 
 type Comment struct {
