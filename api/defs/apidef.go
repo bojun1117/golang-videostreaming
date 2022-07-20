@@ -7,13 +7,13 @@ type UserCredential struct {
 }
 
 type NewComment struct {
-	AuthorId int    `json:"author_id"`
-	Content  string `json:"contents"`
+	User_name string `json:"user_name"`
+	Content   string `json:"contents"`
 }
 
 type NewVideo struct {
-	AuthorId int    `json:"author_id"`
-	Name     string `json:"name"`
+	Author string `json:"author"`
+	Title  string `json:"title"`
 }
 
 // response
@@ -43,9 +43,9 @@ type VideoInfo struct {
 
 type Comment struct {
 	Comment_id  int
-	Video_title string `json:"video_title"`
 	User_name   string `json:"user_name"`
 	Content     string `json:"content"`
+	Video_id    int    `json:"video_id"`
 	Record_time string `json:"record_time"`
 }
 

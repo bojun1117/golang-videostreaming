@@ -65,12 +65,12 @@ func getUserInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { 
 		return
 	}
 	uname := p.ByName("username")
-	u, err := dbops.GetUser(uname)
+	ubody, err := dbops.GetUser(uname)
 	if err != nil {
 		sendErrorResponse(w, defs.ErrorDBError)
 		return
 	}
-	fmt.Println(u)
+	fmt.Println(ubody)
 	return
 }
 
@@ -79,7 +79,12 @@ func addNewVideo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { 
 		log.Printf("Unauthorized user \n")
 		return
 	}
-	err := dbops.AddNewVideo("bojun", "i have a pen")
+	uname := p.ByName("username")
+	vbody := defs.NewVideo{
+		Author: uname,
+		Title:  "i have a pen",
+	}
+	err := dbops.AddNewVideo(vbody.Author, vbody.Title)
 	if err != nil {
 		sendErrorResponse(w, defs.ErrorDBError)
 		return
@@ -87,17 +92,46 @@ func addNewVideo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { 
 	return
 }
 
-func listAllVideos(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //顯示影片
+func listAllVideos(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //顯示所有影片
 	if !session.ValidateUser(w, r, p.ByName("username")) {
 		log.Printf("Unauthorized user \n")
 		return
 	}
-	vs, err := dbops.ListVideoInfo()
+	vs, err := dbops.ListVideoInfo("")
+	if err != nil {
+		sendErrorResponse(w, defs.ErrorDBError)
+		return
+	}
+	fmt.Println(vs[0].Create_time)
+}
+
+func listUserVideos(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //顯示使用者影片
+	if !session.ValidateUser(w, r, p.ByName("username")) {
+		log.Printf("Unauthorized user \n")
+		return
+	}
+	username := p.ByName("username")
+	vs, err := dbops.ListVideoInfo(username)
 	if err != nil {
 		sendErrorResponse(w, defs.ErrorDBError)
 		return
 	}
 	fmt.Println(vs)
+}
+
+func getVideo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //取得影片資訊
+	if !session.ValidateUser(w, r, p.ByName("username")) {
+		log.Printf("Unauthorized user \n")
+		return
+	}
+	vid, _ := strconv.Atoi(p.ByName("vid"))
+	vbody, err := dbops.GetVideoInfo(vid)
+	if err != nil {
+		sendErrorResponse(w, defs.ErrorDBError)
+		return
+	}
+	fmt.Println(vbody.Video_title)
+	return
 }
 
 func deleteVideo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //刪除影片
@@ -106,7 +140,55 @@ func deleteVideo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { 
 		return
 	}
 	vid, _ := strconv.Atoi(p.ByName("vid"))
-	err := dbops.DeleteVideoInfo(vid)
+	uname := p.ByName("username")
+	err := dbops.DeleteVideoInfo(vid, uname)
+	if err != nil {
+		sendErrorResponse(w, defs.ErrorDBError)
+		return
+	}
+}
+
+func postComment(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //新增評論
+	if !session.ValidateUser(w, r, p.ByName("username")) {
+		log.Printf("Unauthorized user \n")
+		return
+	}
+	uname := p.ByName("username")
+	cbody := &defs.NewComment{
+		User_name: uname,
+		Content:   "test",
+	}
+	vid, _ := strconv.Atoi(p.ByName("vid"))
+	if err := dbops.AddNewComments(vid, cbody.User_name, cbody.Content); err != nil {
+		log.Printf("Error in PostComment: %s", err)
+		sendErrorResponse(w, defs.ErrorDBError)
+	}
+	return
+}
+
+func showComments(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //顯示評論
+	if !session.ValidateUser(w, r, p.ByName("username")) {
+		log.Printf("Unauthorized user \n")
+		return
+	}
+	vid, _ := strconv.Atoi(p.ByName("vid"))
+	cm, err := dbops.ListComments(vid)
+	if err != nil {
+		log.Printf("Error in ShowComments: %s", err)
+		sendErrorResponse(w, defs.ErrorDBError)
+		return
+	}
+	fmt.Println(cm[0].Record_time)
+}
+
+func deleteComment(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //刪除影片
+	if !session.ValidateUser(w, r, p.ByName("username")) {
+		log.Printf("Unauthorized user \n")
+		return
+	}
+	cid, _ := strconv.Atoi(p.ByName("cid"))
+	uname := p.ByName("username")
+	err := dbops.DeleteCommentInfo(cid, uname)
 	if err != nil {
 		sendErrorResponse(w, defs.ErrorDBError)
 		return
