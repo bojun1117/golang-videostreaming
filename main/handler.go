@@ -53,7 +53,7 @@ func login(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //ç™»å
 		Pwd:      "eric1117",
 	}
 	uname := p.ByName("username")
-	err := dbops.GetUserCredential(ubody.Username, ubody.Pwd)
+	user_id,err := dbops.GetUserCredential(ubody.Username, ubody.Pwd)
 	if err != nil || uname != ubody.Username {
 		sendErrorResponse(w, defs.ErrorNotAuthUser)
 		return
@@ -61,7 +61,7 @@ func login(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //ç™»å
 	if session.ValidateUser(w, r, ubody.Username) == true {
 		return
 	}
-	session.RegisterSessionInfo(w, r, ubody.Username)
+	session.RegisterSessionInfo(w, r, ubody.Username,user_id)
 	return
 }
 

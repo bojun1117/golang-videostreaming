@@ -34,18 +34,18 @@ func AddUserCredential(username string, pwd string) error { //新增使用者
 	return nil
 }
 
-func GetUserCredential(username string, pwd string) error { //認證使用者
+func GetUserCredential(username string, pwd string) (int,error) { //認證使用者
 	stmtOut, err := db.Prepare("SELECT user_id FROM users WHERE user_name=$1 AND pwd=$2")
 	if err != nil {
-		return err
+		return 0,err
 	}
 	var user_id int
 	err = stmtOut.QueryRow(username, pwd).Scan(&user_id)
 	if err != nil {
-		return err
+		return 0,err
 	}
 	defer stmtOut.Close()
-	return nil
+	return user_id,nil
 }
 
 func GetUser(user_name string) (*defs.User, error) { //取得使用者資料

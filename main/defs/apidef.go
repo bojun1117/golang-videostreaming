@@ -50,6 +50,6 @@ type Comment struct {
 }
 
 type SessionInfo struct {
-	User_name string
-	Auth      bool
+	User_id int
+	Auth    bool
 }
