@@ -23,7 +23,7 @@ import (
 const TEMPLATE_DIR = "./webserver/templates/"
 
 func homehandler(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //首頁
-	t, e := template.ParseFiles(TEMPLATE_DIR + "index.html")
+	t, e := template.ParseFiles(TEMPLATE_DIR + "video.html")
 	if e != nil {
 		log.Printf("Parsing template home.html error: %s", e)
 		return
