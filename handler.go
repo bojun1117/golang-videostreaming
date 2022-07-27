@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
@@ -22,47 +21,73 @@ import (
 //templates
 const TEMPLATE_DIR = "./webserver/templates/"
 
-func homehandler(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //首頁
-	t, e := template.ParseFiles(TEMPLATE_DIR + "video.html")
+func homeHandler(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //首頁
+	t, e := template.ParseFiles(TEMPLATE_DIR + "home.html")
 	if e != nil {
 		log.Printf("Parsing template home.html error: %s", e)
 		return
 	}
-	t.Execute(w, "home.html")
+	query := r.URL.Query().Get("q")
+	if query == "" {
+		vs, err := dbops.ListVideoInfo("")
+		if err != nil {
+			sendErrorResponse(w, defs.ErrorDBError)
+			return
+		}
+		vsi := &defs.VideosInfo{Videos: vs}
+		t.Execute(w, vsi)
+		return
+	}
+	vs, err := dbops.ListSpecifyVideos(query)
+	if err != nil {
+		sendErrorResponse(w, defs.ErrorDBError)
+		return
+	}
+	vsi := &defs.VideosInfo{Videos: vs}
+	t.Execute(w, vsi)
+}
+
+func createUser(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //創建使用者頁面
+	t, e := template.ParseFiles(TEMPLATE_DIR + "adduser.html")
+	if e != nil {
+		log.Printf("Parsing template adduser.html error: %s", e)
+		return
+	}
+	t.Execute(w, nil)
+}
+
+func login(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //登入頁面
+	t, e := template.ParseFiles(TEMPLATE_DIR + "login.html")
+	if e != nil {
+		log.Printf("Parsing template login.html error: %s", e)
+		return
+	}
+	t.Execute(w, nil)
 }
 
 //database
-func createUser(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //創建使用者
-	res := []byte(`{
-		"user_name":"bojun",
-		"pwd":"eric1117"
-	}`)
-	ubody := &defs.UserCredential{}
-	if err := json.Unmarshal(res, ubody); err != nil {
-		sendErrorResponse(w, defs.ErrorRequestBodyParseFailed)
-		return
+func userInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params){	//創建使用者
+	ubody := &defs.UserCredential{
+		Username: r.PostFormValue("user"),
+		Pwd: r.PostFormValue("password"),
 	}
 	if err := dbops.AddUserCredential(ubody.Username, ubody.Pwd); err != nil {
 		sendErrorResponse(w, defs.ErrorDBError)
 		return
 	}
+	http.Redirect(w,r,"./videos",http.StatusFound)
 }
 
-func login(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //登入
-	ubody := &defs.UserCredential{
-		Username: "bojun",
-		Pwd:      "eric1117",
-	}
-	uname := p.ByName("username")
-	user_id, err := dbops.GetUserCredential(ubody.Username, ubody.Pwd)
-	if err != nil || uname != ubody.Username {
+func loginCredential(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //登入驗證
+	Username := r.PostFormValue("user")
+	Pwd := r.PostFormValue("password")
+	user_id, err := dbops.GetUserCredential(Username,Pwd)
+	if err != nil{
 		sendErrorResponse(w, defs.ErrorNotAuthUser)
 		return
 	}
-	if session.ValidateUser(w, r, ubody.Username) == true {
-		return
-	}
-	session.RegisterSessionInfo(w, r, ubody.Username, user_id)
+	session.RegisterSessionInfo(w, r,Username, user_id)
+	http.Redirect(w,r,"./videos",http.StatusFound)
 	return
 }
 
@@ -204,7 +229,7 @@ func deleteComment(w http.ResponseWriter, r *http.Request, p httprouter.Params) 
 
 //streaming
 const (
-	VIDEO_DIR = "./videos/"
+	VIDEO_DIR       = "./videos/"
 	MAX_UPLOAD_SIZE = 50 * 1024 * 1024 // 50MB
 )
 

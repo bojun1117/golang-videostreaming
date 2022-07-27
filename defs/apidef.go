@@ -18,11 +18,11 @@ type NewVideo struct {
 
 // response
 type VideosInfo struct {
-	Videos []*VideoInfo `json:"videos"`
+	Videos []*VideoInfo
 }
 
 type Comments struct {
-	Comments []*Comment `json:"comments"`
+	Comments []*Comment
 }
 
 // Data model
@@ -35,18 +35,18 @@ type User struct {
 
 type VideoInfo struct {
 	Video_id    int
-	Author_name string `json:"author_name"`
-	Video_title string `json:"video_title"`
-	Create_time string `json:"create_time"`
-	Viewed      int    `json:"Viewed"`
+	Author_name string
+	Video_title string 
+	Create_time string
+	Viewed      int  
 }
 
 type Comment struct {
 	Comment_id  int
-	User_name   string `json:"user_name"`
-	Content     string `json:"content"`
-	Video_id    int    `json:"video_id"`
-	Record_time string `json:"record_time"`
+	User_name   string
+	Content     string
+	Video_id    int  
+	Record_time string
 }
 
 type SessionInfo struct {

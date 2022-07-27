@@ -30,9 +30,11 @@ func (m middleWareHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) { /
 
 func RegisterHandlers() *httprouter.Router { //API控制
 	router := httprouter.New()
-	router.GET("/", homehandler)
+	router.GET("/videos", homeHandler)
 	router.GET("/user", createUser)
-	router.POST("/user/:username", login)
+	router.POST("/user", userInfo)
+	router.GET("/login", login)
+	router.POST("/login", loginCredential)
 	router.GET("/user/:username", getUserInfo)
 	router.POST("/user/:username/videos", addNewVideo)
 	router.GET("/user/:username/videos", listAllVideos)
@@ -44,12 +46,9 @@ func RegisterHandlers() *httprouter.Router { //API控制
 	router.GET("/videos/:vid", streamHandler)
 	router.POST("/upload/:vid", uploadHandler)
 	/*
-		router.GET("/videos", homeHandler)
-		router.POST("/videos",search)
-		router.GET("/user", createUser)
-		router.POST("/", userInfo)
-		router.GET("/login", login)
-		router.POST("/login", loginCredential)
+		
+		
+		
 		router.GET("/videos/:videoname",searchPage)
 		router.GET("/videos/:username",userVideos)
 		router.DELETE("/videos/:username",deleteVideo)

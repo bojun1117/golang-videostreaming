@@ -142,6 +142,36 @@ func ListVideoInfo(username string) ([]*defs.VideoInfo, error) { //顯示影片
 	return res, nil
 }
 
+func ListSpecifyVideos(q string) ([]*defs.VideoInfo, error){ //搜尋特定結果
+	var res []*defs.VideoInfo
+	stmtOut, err := db.Prepare("SELECT * FROM video_info WHERE video_title LIKE $1")
+	if err != nil {
+		return res, err
+	}
+	rows, err := stmtOut.Query("%"+q+"%")
+	if err != nil {
+		return res, err
+	}
+	for rows.Next() {
+		var author, title, ctime string
+		var id, view int
+		if err := rows.Scan(&id, &author, &title, &ctime, &view); err != nil {
+			return res, err
+		}
+		ctime = ctime[:10]
+		vi := &defs.VideoInfo{
+			Video_id:    id,
+			Author_name: author,
+			Video_title: title,
+			Create_time: ctime,
+			Viewed:      view,
+		}
+		res = append(res, vi)
+	}
+	defer stmtOut.Close()
+	return res, nil
+}
+
 func DeleteVideoInfo(vid int, uname string) error { //刪除影片
 	stmtDel, err := db.Prepare("DELETE FROM video_info WHERE video_id = $1 and author_name = $2")
 	if err != nil {
