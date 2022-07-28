@@ -18,7 +18,8 @@ type NewVideo struct {
 
 // response
 type VideosInfo struct {
-	Videos []*VideoInfo
+	Videos  []*VideoInfo
+	Message string
 }
 
 type Comments struct {
@@ -36,16 +37,16 @@ type User struct {
 type VideoInfo struct {
 	Video_id    int
 	Author_name string
-	Video_title string 
+	Video_title string
 	Create_time string
-	Viewed      int  
+	Viewed      int
 }
 
 type Comment struct {
 	Comment_id  int
 	User_name   string
 	Content     string
-	Video_id    int  
+	Video_id    int
 	Record_time string
 }
 

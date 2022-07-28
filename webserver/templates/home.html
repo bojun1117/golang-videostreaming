@@ -12,6 +12,13 @@
         <link href="../css/styles.css" rel="stylesheet" />
     </head>
     <body>
+        {{ if .Message }}
+        <!--inform-->
+        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+            {{.Message}}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {{ end }}
         <!-- Navigation-->
         <nav class="navbar navbar-expand-lg navbar-light bg-light">
             <div class="container px-4 px-lg-5">

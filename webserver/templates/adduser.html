@@ -12,6 +12,13 @@
         <link href="../css/styles.css" rel="stylesheet" />
     </head>
     <body>
+        {{ if . }}
+        <!--inform-->
+        <div class="alert alert-warning alert-dismissible fade show" style="margin-bottom: 0px" role="alert">
+            {{.}}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {{ end }}
         <section class="vh-100" style="background-color: #d1d5c1;">
             <div class="container py-5 h-100">
               <div class="row d-flex justify-content-center align-items-center h-100">
@@ -34,6 +41,7 @@
               </div>
             </div>
           </section>
-        
+        <!-- Bootstrap core JS-->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     </body>
 </html>

@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"time"
@@ -22,72 +23,103 @@ import (
 const TEMPLATE_DIR = "./webserver/templates/"
 
 func homeHandler(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //首頁
+	var message string
+	em, err := r.Cookie("messagecookie")
+	if err != nil {
+		message = ""
+	} else {
+		message, _ = url.QueryUnescape(em.Value)
+	}
 	t, e := template.ParseFiles(TEMPLATE_DIR + "home.html")
 	if e != nil {
 		log.Printf("Parsing template home.html error: %s", e)
 		return
 	}
 	query := r.URL.Query().Get("q")
-	if query == "" {
+	if query == "" { //無搜尋
 		vs, err := dbops.ListVideoInfo("")
 		if err != nil {
-			sendErrorResponse(w, defs.ErrorDBError)
 			return
 		}
-		vsi := &defs.VideosInfo{Videos: vs}
+		vsi := &defs.VideosInfo{
+			Videos:  vs,
+			Message: message,
+		}
 		t.Execute(w, vsi)
 		return
 	}
-	vs, err := dbops.ListSpecifyVideos(query)
+	vs, err := dbops.ListSpecifyVideos(query) //搜尋
 	if err != nil {
-		sendErrorResponse(w, defs.ErrorDBError)
 		return
 	}
-	vsi := &defs.VideosInfo{Videos: vs}
+	vsi := &defs.VideosInfo{
+		Videos:  vs,
+		Message: message,
+	}
 	t.Execute(w, vsi)
 }
 
 func createUser(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //創建使用者頁面
+	var message string
+	em, err := r.Cookie("messagecookie")
+	if err != nil {
+		message = ""
+	} else {
+		message, _ = url.QueryUnescape(em.Value)
+	}
 	t, e := template.ParseFiles(TEMPLATE_DIR + "adduser.html")
 	if e != nil {
 		log.Printf("Parsing template adduser.html error: %s", e)
 		return
 	}
-	t.Execute(w, nil)
+	t.Execute(w, message)
 }
 
 func login(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //登入頁面
+	var message string
+	em, err := r.Cookie("messagecookie")
+	if err != nil {
+		message = ""
+	} else {
+		message, _ = url.QueryUnescape(em.Value)
+	}
 	t, e := template.ParseFiles(TEMPLATE_DIR + "login.html")
 	if e != nil {
 		log.Printf("Parsing template login.html error: %s", e)
 		return
 	}
-	t.Execute(w, nil)
+	t.Execute(w, message)
 }
 
 //database
-func userInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params){	//創建使用者
+func userInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //創建使用者
 	ubody := &defs.UserCredential{
 		Username: r.PostFormValue("user"),
-		Pwd: r.PostFormValue("password"),
+		Pwd:      r.PostFormValue("password"),
 	}
 	if err := dbops.AddUserCredential(ubody.Username, ubody.Pwd); err != nil {
-		sendErrorResponse(w, defs.ErrorDBError)
+		message := "使用者已被註冊"
+		cookieMessage(message, w)
+		http.Redirect(w, r, "./user", http.StatusFound)
 		return
 	}
-	http.Redirect(w,r,"./videos",http.StatusFound)
+	message := "註冊成功"
+	cookieMessage(message, w)
+	http.Redirect(w, r, "./videos", http.StatusFound)
 }
 
 func loginCredential(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //登入驗證
 	Username := r.PostFormValue("user")
 	Pwd := r.PostFormValue("password")
-	user_id, err := dbops.GetUserCredential(Username,Pwd)
-	if err != nil{
-		sendErrorResponse(w, defs.ErrorNotAuthUser)
+	user_id, err := dbops.GetUserCredential(Username, Pwd)
+	if err != nil {
+		message := "帳號或密碼錯誤"
+		cookieMessage(message,w)
+		http.Redirect(w,r,"./login",http.StatusFound)
 		return
 	}
-	session.RegisterSessionInfo(w, r,Username, user_id)
-	http.Redirect(w,r,"./videos",http.StatusFound)
+	session.RegisterSessionInfo(w, r, Username, user_id)
+	http.Redirect(w, r, "./videos", http.StatusFound)
 	return
 }
 
@@ -99,7 +131,7 @@ func getUserInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { 
 	uname := p.ByName("username")
 	ubody, err := dbops.GetUser(uname)
 	if err != nil {
-		sendErrorResponse(w, defs.ErrorDBError)
+
 		return
 	}
 	fmt.Println(ubody)
@@ -118,7 +150,7 @@ func addNewVideo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { 
 	}
 	err := dbops.AddNewVideo(vbody.Author, vbody.Title)
 	if err != nil {
-		sendErrorResponse(w, defs.ErrorDBError)
+
 		return
 	}
 	return
@@ -131,7 +163,7 @@ func listAllVideos(w http.ResponseWriter, r *http.Request, p httprouter.Params) 
 	}
 	vs, err := dbops.ListVideoInfo("")
 	if err != nil {
-		sendErrorResponse(w, defs.ErrorDBError)
+
 		return
 	}
 	fmt.Println(vs[0].Create_time)
@@ -145,7 +177,7 @@ func listUserVideos(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 	username := p.ByName("username")
 	vs, err := dbops.ListVideoInfo(username)
 	if err != nil {
-		sendErrorResponse(w, defs.ErrorDBError)
+
 		return
 	}
 	fmt.Println(vs)
@@ -159,7 +191,7 @@ func getVideo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //�
 	vid, _ := strconv.Atoi(p.ByName("vid"))
 	vbody, err := dbops.GetVideoInfo(vid)
 	if err != nil {
-		sendErrorResponse(w, defs.ErrorDBError)
+
 		return
 	}
 	fmt.Println(vbody.Video_title)
@@ -175,7 +207,7 @@ func deleteVideo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { 
 	uname := p.ByName("username")
 	err := dbops.DeleteVideoInfo(vid, uname)
 	if err != nil {
-		sendErrorResponse(w, defs.ErrorDBError)
+
 		return
 	}
 }
@@ -193,7 +225,7 @@ func postComment(w http.ResponseWriter, r *http.Request, p httprouter.Params) { 
 	vid, _ := strconv.Atoi(p.ByName("vid"))
 	if err := dbops.AddNewComments(vid, cbody.User_name, cbody.Content); err != nil {
 		log.Printf("Error in PostComment: %s", err)
-		sendErrorResponse(w, defs.ErrorDBError)
+
 	}
 	return
 }
@@ -207,7 +239,7 @@ func showComments(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	cm, err := dbops.ListComments(vid)
 	if err != nil {
 		log.Printf("Error in ShowComments: %s", err)
-		sendErrorResponse(w, defs.ErrorDBError)
+
 		return
 	}
 	fmt.Println(cm[0].Record_time)
@@ -222,7 +254,7 @@ func deleteComment(w http.ResponseWriter, r *http.Request, p httprouter.Params) 
 	uname := p.ByName("username")
 	err := dbops.DeleteCommentInfo(cid, uname)
 	if err != nil {
-		sendErrorResponse(w, defs.ErrorDBError)
+
 		return
 	}
 }
@@ -239,7 +271,7 @@ func streamHandler(w http.ResponseWriter, r *http.Request, p httprouter.Params) 
 	video, err := os.Open(vl)
 	if err != nil {
 		log.Printf("Error when try to open file: %v", err)
-		sendErrorResponse(w, defs.ErrorInternalFaults)
+
 		return
 	}
 	w.Header().Set("Content-Type", "video/mp4")
@@ -250,27 +282,27 @@ func streamHandler(w http.ResponseWriter, r *http.Request, p httprouter.Params) 
 func uploadHandler(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	r.Body = http.MaxBytesReader(w, r.Body, MAX_UPLOAD_SIZE)
 	if err := r.ParseMultipartForm(MAX_UPLOAD_SIZE); err != nil {
-		sendErrorResponse(w, defs.ErrorRequestBodyParseFailed)
+
 		return
 	}
 
 	file, _, err := r.FormFile("file")
 	if err != nil {
-		sendErrorResponse(w, defs.ErrorInternalFaults)
+
 		return
 	}
 
 	data, err := ioutil.ReadAll(file)
 	if err != nil {
 		log.Printf("Read file error: %v", err)
-		sendErrorResponse(w, defs.ErrorInternalFaults)
+
 	}
 
 	fn := p.ByName("vid-id")
 	err = ioutil.WriteFile(VIDEO_DIR+fn, data, 0666)
 	if err != nil {
 		log.Printf("Write file error: %v", err)
-		sendErrorResponse(w, defs.ErrorInternalFaults)
+
 		return
 	}
 

@@ -2,7 +2,6 @@ package main
 
 import (
 	"net/http"
-	"video-streaming/defs"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -21,7 +20,6 @@ func NewMiddleWareHandler(r *httprouter.Router, cc int) http.Handler { //初始�
 
 func (m middleWareHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) { //實作ServeHTTP method
 	if !m.l.GetConn() {
-		sendErrorResponse(w, defs.ErrorTooManyRequests)
 		return
 	}
 	m.r.ServeHTTP(w, r)
@@ -46,9 +44,9 @@ func RegisterHandlers() *httprouter.Router { //API控制
 	router.GET("/videos/:vid", streamHandler)
 	router.POST("/upload/:vid", uploadHandler)
 	/*
-		
-		
-		
+
+
+
 		router.GET("/videos/:videoname",searchPage)
 		router.GET("/videos/:username",userVideos)
 		router.DELETE("/videos/:username",deleteVideo)
