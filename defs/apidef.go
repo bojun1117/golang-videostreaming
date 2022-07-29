@@ -19,6 +19,7 @@ type NewVideo struct {
 // response
 type VideosInfo struct {
 	Videos  []*VideoInfo
+	User	string
 	Message string
 }
 
@@ -52,5 +53,6 @@ type Comment struct {
 
 type SessionInfo struct {
 	User_id int
+	User_name string
 	Auth    bool
 }

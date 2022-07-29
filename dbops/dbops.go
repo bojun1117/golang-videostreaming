@@ -2,6 +2,7 @@ package dbops
 
 import (
 	"database/sql"
+	"errors"
 	"log"
 	"video-streaming/defs"
 
@@ -22,6 +23,10 @@ func init() {
 }
 
 func AddUserCredential(username string, pwd string) error { //新增使用者
+	if username == "" || pwd == "" {
+		err := errors.New("blank")
+		return err
+	}
 	stmtIns, err := db.Prepare("INSERT INTO users (user_name, pwd) VALUES ($1, $2)")
 	if err != nil {
 		return err
@@ -81,7 +86,7 @@ func AddNewVideo(author_name string, title string) error { //新增影片
 	return nil
 }
 
-func GetVideoInfo(vid int) (*defs.VideoInfo, error) {	//取得單一影片資訊
+func GetVideoInfo(vid int) (*defs.VideoInfo, error) { //取得單一影片資訊
 	stmtOut, err := db.Prepare("SELECT author_name, video_title, create_time, viewed FROM video_info WHERE video_id=$1")
 	if err != nil {
 		return nil, err
@@ -142,13 +147,13 @@ func ListVideoInfo(username string) ([]*defs.VideoInfo, error) { //顯示影片
 	return res, nil
 }
 
-func ListSpecifyVideos(q string) ([]*defs.VideoInfo, error){ //搜尋特定結果
+func ListSpecifyVideos(q string) ([]*defs.VideoInfo, error) { //搜尋特定結果
 	var res []*defs.VideoInfo
 	stmtOut, err := db.Prepare("SELECT * FROM video_info WHERE video_title LIKE $1")
 	if err != nil {
 		return res, err
 	}
-	rows, err := stmtOut.Query("%"+q+"%")
+	rows, err := stmtOut.Query("%" + q + "%")
 	if err != nil {
 		return res, err
 	}

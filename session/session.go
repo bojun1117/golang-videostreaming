@@ -3,40 +3,43 @@ package session
 import (
 	"net/http"
 	"video-streaming/dbops"
-	"video-streaming/defs"
 
 	"github.com/gorilla/sessions"
 )
 
 var store *sessions.CookieStore
+var sessionCookieName = "user-session"
 
 func init() {
 	store = sessions.NewCookieStore([]byte("secret-key"))
 }
 
-func ValidateUser(w http.ResponseWriter, r *http.Request, username string) bool { //確認session存在
-	session, err := store.Get(r, username)
+func ValidateUser(w http.ResponseWriter, r *http.Request) string { //確認session存在 存在返回user
+	session, err := store.Get(r, sessionCookieName)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return false
+		return ""
 	}
-	user, err := dbops.GetUser(username)
+	if session.Values["user_name"] == nil {
+		return ""
+	}
+	user, err := dbops.GetUser(session.Values["user_name"].(string))
 	if err != nil {
-		return false
+		return ""
 	}
-	if session.Values["auth"] == true && session.Values["user_id"] == user.User_id {
-		return true
+	if session.Values["auth"] == true {
+		return user.User_name
 	}
-	return false
+	return ""
 }
 
-func RegisterSessionInfo(w http.ResponseWriter, r *http.Request, username string, user_id int) { //註冊session
-	session, err := store.Get(r, username)
+func RegisterSessionInfo(w http.ResponseWriter, r *http.Request, username string, userid int) { //註冊session
+	session, err := store.Get(r, sessionCookieName)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	session.Values["user_id"] = user_id
+	session.Values["user_id"] = userid
+	session.Values["user_name"] = username
 	session.Values["auth"] = true
 	err = session.Save(r, w)
 	if err != nil {
@@ -45,14 +48,14 @@ func RegisterSessionInfo(w http.ResponseWriter, r *http.Request, username string
 	}
 }
 
-func GetSessionInfo(w http.ResponseWriter, r *http.Request, uname string) *defs.SessionInfo { //取得session資訊
-	session, err := store.Get(r, uname)
-	si := &defs.SessionInfo{
-		User_id: session.Values["user_id"].(int),
-		Auth:    session.Values["auth"].(bool),
-	}
+func RemoveSessionAuth(w http.ResponseWriter, r *http.Request) { //取消session auth
+	session, err := store.Get(r, sessionCookieName)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
-	return si
+	session.Values["auth"] = false
+	err = session.Save(r, w)
+	if err != nil {
+		return
+	}
 }

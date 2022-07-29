@@ -33,22 +33,9 @@ func RegisterHandlers() *httprouter.Router { //API控制
 	router.POST("/user", userInfo)
 	router.GET("/login", login)
 	router.POST("/login", loginCredential)
-	router.GET("/user/:username", getUserInfo)
-	router.POST("/user/:username/videos", addNewVideo)
-	router.GET("/user/:username/videos", listAllVideos)
-	router.GET("/user/:username/videos/:vid", getVideo)
-	router.DELETE("/user/:username/videos/:vid", deleteVideo)
-	router.POST("/user/:username/videos/:vid/comments", postComment)
-	router.GET("/user/:username/videos/:vid/comments", showComments)
-	router.DELETE("/user/:username/videos/:vid/comments/:cid", deleteComment)
-	router.GET("/videos/:vid", streamHandler)
-	router.POST("/upload/:vid", uploadHandler)
+	router.GET("/logout", logout)
+	router.GET("/videos/:username",userVideos)
 	/*
-
-
-
-		router.GET("/videos/:videoname",searchPage)
-		router.GET("/videos/:username",userVideos)
 		router.DELETE("/videos/:username",deleteVideo)
 		router.GET("/videos/:vid",VideoInfo)
 		router.POST("/videos/:vid",postComment)
