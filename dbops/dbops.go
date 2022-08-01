@@ -216,6 +216,9 @@ func ListComments(vid int) ([]*defs.Comment, error) { //顯示評論
 		if err := rows.Scan(&id, &name, &content, &vid, &time); err != nil {
 			return res, err
 		}
+		tmp := []byte(time)
+		tmp[10] = ' '
+		time = string(tmp)
 		c := &defs.Comment{
 			Comment_id:  id,
 			User_name:   name,

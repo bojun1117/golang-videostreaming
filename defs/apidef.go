@@ -19,12 +19,15 @@ type NewVideo struct {
 // response
 type VideosInfo struct {
 	Videos  []*VideoInfo
-	User	string
+	User    string
 	Message string
 }
 
-type Comments struct {
+type VideoDetails struct {
 	Comments []*Comment
+	Title    string
+	Author   string
+	User     string
 }
 
 // Data model
@@ -52,7 +55,7 @@ type Comment struct {
 }
 
 type SessionInfo struct {
-	User_id int
+	User_id   int
 	User_name string
-	Auth    bool
+	Auth      bool
 }
