@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"html/template"
 	"io"
 	"io/ioutil"
@@ -20,7 +19,7 @@ import (
 )
 
 //templates
-const TEMPLATE_DIR = "./webserver/templates/"
+const TEMPLATE_DIR = "./templates/"
 
 func homeHandler(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //首頁
 	var message string
@@ -67,7 +66,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request, p httprouter.Params) { 
 	t.Execute(w, vsi)
 }
 
-func createUser(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //創建使用者頁面
+func createUser(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //註冊頁面
 	var message string
 	em, err := r.Cookie("messagecookie")
 	if err != nil {
@@ -76,9 +75,9 @@ func createUser(w http.ResponseWriter, r *http.Request, p httprouter.Params) { /
 		message, _ = url.QueryUnescape(em.Value)
 	}
 
-	t, e := template.ParseFiles(TEMPLATE_DIR + "adduser.html")
+	t, e := template.ParseFiles(TEMPLATE_DIR + "register.html")
 	if e != nil {
-		log.Printf("Parsing template adduser.html error: %s", e)
+		log.Printf("Parsing template register.html error: %s", e)
 		return
 	}
 
@@ -141,9 +140,9 @@ func videoInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //
 	}
 	vdi := &defs.VideoDetails{
 		Comments: cbody,
-		Title: vbody.Video_title,
-		Author: vbody.Author_name,
-		User: user,
+		Title:    vbody.Video_title,
+		Author:   vbody.Author_name,
+		User:     user,
 	}
 
 	t, e := template.ParseFiles(TEMPLATE_DIR + "video.html")
@@ -156,13 +155,10 @@ func videoInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //
 }
 
 //database
-func userInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //創建使用者
-	ubody := &defs.UserCredential{
-		Username: r.PostFormValue("user"),
-		Pwd:      r.PostFormValue("password"),
-	}
-
-	if err := dbops.AddUserCredential(ubody.Username, ubody.Pwd); err != nil {
+func userInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //註冊
+	username := r.PostFormValue("user")
+	pwd := r.PostFormValue("password")
+	if err := dbops.AddUserCredential(username, pwd); err != nil {
 		var message string
 		if err.Error() == "blank" {
 			message = "不可空白"
@@ -170,13 +166,13 @@ func userInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //�
 			message = "使用者已被註冊"
 		}
 		cookieMessage(message, w)
-		http.Redirect(w, r, "create", http.StatusFound)
+		http.Redirect(w, r, "./create", http.StatusFound)
 		return
 	}
 	message := "註冊成功"
 	cookieMessage(message, w)
 
-	http.Redirect(w, r, "videos", http.StatusFound)
+	http.Redirect(w, r, "./videos", http.StatusFound)
 }
 
 func loginCredential(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //登入驗證
@@ -213,90 +209,36 @@ func deleteVideo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { 
 	http.Redirect(w, r, "../user", http.StatusFound)
 }
 
-func addNewVideo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //新增影片
-
-	uname := p.ByName("username")
-	vbody := defs.NewVideo{
-		Author: uname,
-		Title:  "i have a pen",
-	}
-	err := dbops.AddNewVideo(vbody.Author, vbody.Title)
-	if err != nil {
-
-		return
-	}
-	return
-}
-
-func listAllVideos(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //顯示所有影片
-
-	vs, err := dbops.ListVideoInfo("")
-	if err != nil {
-
-		return
-	}
-	fmt.Println(vs[0].Create_time)
-}
-
-func listUserVideos(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //顯示使用者影片
-
-	username := p.ByName("username")
-	vs, err := dbops.ListVideoInfo(username)
-	if err != nil {
-
-		return
-	}
-	fmt.Println(vs)
-}
-
-func getVideo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //取得影片資訊
-
-	vid, _ := strconv.Atoi(p.ByName("vid"))
-	vbody, err := dbops.GetVideoInfo(vid)
-	if err != nil {
-
-		return
-	}
-	fmt.Println(vbody.Video_title)
-	return
-}
-
 func postComment(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //新增評論
-
-	uname := p.ByName("username")
-	cbody := &defs.NewComment{
-		User_name: uname,
-		Content:   "test",
+	user := session.ValidateUser(w, r)
+	h := p.ByName("vid")
+	if user == "" {
+		log.Printf("not a user")
+		http.Redirect(w, r, h, http.StatusFound)
+		return
+	}
+	content := r.PostFormValue("content")
+	if content == "" {
+		log.Printf("blank")
+		http.Redirect(w, r, h, http.StatusFound)
+		return
 	}
 	vid, _ := strconv.Atoi(p.ByName("vid"))
-	if err := dbops.AddNewComments(vid, cbody.User_name, cbody.Content); err != nil {
+	if err := dbops.AddNewComments(vid, user, content); err != nil {
 		log.Printf("Error in PostComment: %s", err)
-
 	}
-	return
+	http.Redirect(w, r, h, http.StatusFound)
 }
 
-func showComments(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //顯示評論
-
-	vid, _ := strconv.Atoi(p.ByName("vid"))
-	cm, err := dbops.ListComments(vid)
-	if err != nil {
-		log.Printf("Error in ShowComments: %s", err)
-
-		return
-	}
-	fmt.Println(cm[0].Record_time)
-}
-
-func deleteComment(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //刪除影片
-
+func deleteComment(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //刪除評論
+	h := "../" + p.ByName("vid")
 	cid, _ := strconv.Atoi(p.ByName("cid"))
-	uname := p.ByName("username")
-	err := dbops.DeleteCommentInfo(cid, uname)
+	user := session.ValidateUser(w, r)
+	err := dbops.DeleteCommentInfo(cid, user)
 	if err != nil {
-
-		return
+		log.Printf("Error in deleteComment: %s", err)
 	}
+	http.Redirect(w, r, h, http.StatusFound)
 }
 
 //streaming

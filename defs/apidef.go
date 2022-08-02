@@ -1,21 +1,5 @@
 package defs
 
-//requests
-type UserCredential struct {
-	Username string `json:"user_name"`
-	Pwd      string `json:"pwd"`
-}
-
-type NewComment struct {
-	User_name string `json:"user_name"`
-	Content   string `json:"contents"`
-}
-
-type NewVideo struct {
-	Author string `json:"author"`
-	Title  string `json:"title"`
-}
-
 // response
 type VideosInfo struct {
 	Videos  []*VideoInfo
