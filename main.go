@@ -11,14 +11,14 @@ type middleWareHandler struct {
 	l *ConnLimiter
 }
 
-func NewMiddleWareHandler(r *httprouter.Router, cc int) http.Handler { //初始化handler
+func NewMiddleWareHandler(r *httprouter.Router, cc int) http.Handler {
 	m := middleWareHandler{}
 	m.r = r
 	m.l = NewConnLimiter(cc)
 	return m
 }
 
-func (m middleWareHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) { //實作ServeHTTP method
+func (m middleWareHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if !m.l.GetConn() {
 		return
 	}
@@ -26,7 +26,7 @@ func (m middleWareHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) { /
 	defer m.l.ReleaseConn()
 }
 
-func RegisterHandlers() *httprouter.Router { //API控制
+func RegisterHandlers() *httprouter.Router {
 	router := httprouter.New()
 	router.GET("/videos", homeHandler)
 	router.GET("/create", createUser)
@@ -37,17 +37,15 @@ func RegisterHandlers() *httprouter.Router { //API控制
 	router.GET("/user", userVideos)
 	router.GET("/user/:vid", deleteVideo)
 	router.GET("/videos/:vid", videoInfo)
-	router.POST("/videos/:vid",postComment)
-	router.GET("/videos/:vid/:cid",deleteComment)
-	/*
-		router.GET("/videos/:username/upload",upload)
-		router.POST("/videos/:username/upload",uploadVideo)
-	*/
+	router.POST("/videos/:vid", postComment)
+	router.GET("/videos/:vid/:cid", deleteComment)
+	router.GET("/upload",upload)
+	router.POST("/upload",uploadVideo)
 	return router
 }
 
 func main() {
 	r := RegisterHandlers()
-	mh := NewMiddleWareHandler(r, 10)
+	mh := NewMiddleWareHandler(r, 2)
 	http.ListenAndServe(":5050", mh)
 }

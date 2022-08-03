@@ -2,7 +2,6 @@ package dbops
 
 import (
 	"database/sql"
-	"errors"
 	"log"
 	"video-streaming/defs"
 
@@ -23,10 +22,6 @@ func init() {
 }
 
 func AddUserCredential(username string, pwd string) error { //新增使用者
-	if username == "" || pwd == "" {
-		err := errors.New("blank")
-		return err
-	}
 	stmtIns, err := db.Prepare("INSERT INTO users (user_name, pwd) VALUES ($1, $2)")
 	if err != nil {
 		return err

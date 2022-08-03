@@ -24,9 +24,7 @@ const TEMPLATE_DIR = "./templates/"
 func homeHandler(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //首頁
 	var message string
 	em, err := r.Cookie("messagecookie")
-	if err != nil {
-		message = ""
-	} else {
+	if err == nil {
 		message, _ = url.QueryUnescape(em.Value)
 	}
 
@@ -69,9 +67,7 @@ func homeHandler(w http.ResponseWriter, r *http.Request, p httprouter.Params) { 
 func createUser(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //註冊頁面
 	var message string
 	em, err := r.Cookie("messagecookie")
-	if err != nil {
-		message = ""
-	} else {
+	if err == nil {
 		message, _ = url.QueryUnescape(em.Value)
 	}
 
@@ -87,9 +83,7 @@ func createUser(w http.ResponseWriter, r *http.Request, p httprouter.Params) { /
 func login(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //登入頁面
 	var message string
 	em, err := r.Cookie("messagecookie")
-	if err != nil {
-		message = ""
-	} else {
+	if err == nil {
 		message, _ = url.QueryUnescape(em.Value)
 	}
 
@@ -105,7 +99,8 @@ func login(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //登�
 func userVideos(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //會員頁面
 	user := session.ValidateUser(w, r)
 	if user == "" {
-		http.Redirect(w, r, "./videos", http.StatusFound)
+		log.Printf("not member")
+		http.Redirect(w, r, "videos", http.StatusFound)
 	}
 
 	t, e := template.ParseFiles(TEMPLATE_DIR + "uservideos.html")
@@ -136,7 +131,6 @@ func videoInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //
 	cbody, err := dbops.ListComments(vid)
 	if err != nil {
 		log.Printf("Error in ShowComments: %s", err)
-		return
 	}
 	vdi := &defs.VideoDetails{
 		Comments: cbody,
@@ -154,17 +148,34 @@ func videoInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //
 	t.Execute(w, vdi)
 }
 
+func upload(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //上傳頁面
+	user := session.ValidateUser(w, r)
+	if user == "" {
+		log.Printf("not member")
+		http.Redirect(w, r, "videos", http.StatusFound)
+	}
+
+	var message string
+	em, err := r.Cookie("messagecookie")
+	if err == nil {
+		message, _ = url.QueryUnescape(em.Value)
+	}
+
+	t, e := template.ParseFiles(TEMPLATE_DIR + "upload.html")
+	if e != nil {
+		log.Printf("Parsing template upload.html error: %s", e)
+		return
+	}
+
+	t.Execute(w, message)
+}
+
 //database
 func userInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //註冊
 	username := r.PostFormValue("user")
 	pwd := r.PostFormValue("password")
 	if err := dbops.AddUserCredential(username, pwd); err != nil {
-		var message string
-		if err.Error() == "blank" {
-			message = "不可空白"
-		} else {
-			message = "使用者已被註冊"
-		}
+		message := "使用者已被註冊"
 		cookieMessage(message, w)
 		http.Redirect(w, r, "./create", http.StatusFound)
 		return
@@ -239,6 +250,57 @@ func deleteComment(w http.ResponseWriter, r *http.Request, p httprouter.Params) 
 		log.Printf("Error in deleteComment: %s", err)
 	}
 	http.Redirect(w, r, h, http.StatusFound)
+}
+
+func uploadVideo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //上傳影片
+	title := r.PostFormValue("title")
+	user := session.ValidateUser(w, r)
+	err := dbops.AddNewVideo(user, title)
+	if err != nil {
+		message := "影片名稱重複"
+		cookieMessage(message, w)
+		http.Redirect(w, r, "upload", http.StatusFound)
+		return
+	}
+
+	r.ParseMultipartForm(50)
+	video, handler, err := r.FormFile("video")
+	if err != nil {
+		message := "影片上傳失敗"
+		cookieMessage(message, w)
+		http.Redirect(w, r, "user", http.StatusFound)
+		return
+	}
+	defer video.Close()
+	v, err := os.OpenFile("videos/"+handler.Filename, os.O_RDONLY|os.O_CREATE, 0666)
+	if err != nil {
+		message := "影片上傳失敗"
+		cookieMessage(message, w)
+		http.Redirect(w, r, "user", http.StatusFound)
+		return
+	}
+	defer v.Close()
+	io.Copy(v, video)
+
+	cover, handler, err := r.FormFile("cover")
+	if err != nil {
+		message := "封面上傳失敗"
+		cookieMessage(message, w)
+		http.Redirect(w, r, "user", http.StatusFound)
+		return
+	}
+	defer video.Close()
+	c, err := os.OpenFile("videos/"+handler.Filename, os.O_RDONLY|os.O_CREATE, 0666)
+	if err != nil {
+		message := "封面上傳失敗"
+		cookieMessage(message, w)
+		http.Redirect(w, r, "user", http.StatusFound)
+		return
+	}
+	defer c.Close()
+	io.Copy(c, cover)
+
+	http.Redirect(w, r, "user", http.StatusFound)
 }
 
 //streaming

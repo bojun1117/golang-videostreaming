@@ -14,16 +14,16 @@ func NewConnLimiter(cc int) *ConnLimiter {
 	}
 }
 
-func (cl *ConnLimiter) GetConn() bool { //使用者是否過多
+func (cl *ConnLimiter) GetConn() bool { //判斷使用者是否過多
 	if len(cl.bucket) >= cl.concurrentConn {
 		log.Printf("Reached the rate limitation.")
 		return false
 	}
-
-	cl.bucket <- 1
+	cl.bucket <- len(cl.bucket) + 1
 	return true
 }
 
 func (cl *ConnLimiter) ReleaseConn() {
-	<-cl.bucket
+	c := <-cl.bucket
+	log.Printf("New connction coming: %d", c)
 }
