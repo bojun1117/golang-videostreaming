@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
   <head>
-  	<title>Login 09</title>
+  	<title>Upload</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <!-- Bootstrap icons-->
@@ -11,6 +11,13 @@
 
 	</head>
 	<body>
+    {{ if . }}
+    <!--inform-->
+    <div class="alert alert-warning alert-dismissible fade show" style="margin-bottom: 0px" role="alert">
+        {{.}}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {{ end }}
     <section class="vh-100" style="background-color: #d1d5c1;">
       <div class="container py-5 h-100">
         <div class="row d-flex justify-content-center align-items-center h-100">
@@ -24,7 +31,7 @@
                 </div>
 
                 <div class="form-outline mb-4">
-                  <input type="file" name="cover" class="form-control form-control-lg" accept="image/*">
+                  <input type="text" name="cover" class="form-control form-control-lg">
                   <label class="form-label">Cover(not necessary)</label>
                 </div>
 
@@ -41,7 +48,8 @@
         </div>
       </div>
     </section>
-
 	</body>
+  <!-- Bootstrap core JS-->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </html>
 

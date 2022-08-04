@@ -20,7 +20,7 @@ func TestGetUser(t *testing.T) {
 }
 
 func TestAddVideoInfo(t *testing.T) {
-	err := AddNewVideo("test", "my-video")
+	err := AddNewVideo("test", "my-video","http://")
 	if err != nil {
 		t.Errorf("Error of AddVideoInfo: %v", err)
 	}

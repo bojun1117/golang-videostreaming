@@ -24,6 +24,5 @@ func (cl *ConnLimiter) GetConn() bool { //判斷使用者是否過多
 }
 
 func (cl *ConnLimiter) ReleaseConn() {
-	c := <-cl.bucket
-	log.Printf("New connction coming: %d", c)
+	<-cl.bucket
 }

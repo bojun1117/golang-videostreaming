@@ -37,8 +37,9 @@ func RegisterHandlers() *httprouter.Router {
 	router.GET("/user", userVideos)
 	router.GET("/user/:vid", deleteVideo)
 	router.GET("/videos/:vid", videoInfo)
-	router.POST("/videos/:vid", postComment)
-	router.GET("/videos/:vid/:cid", deleteComment)
+	router.GET("/comments/:vid", commentInfo)
+	router.POST("/comments/:vid", postComment)
+	router.GET("/comments/:vid/:cid", deleteComment)
 	router.GET("/upload",upload)
 	router.POST("/upload",uploadVideo)
 	return router

@@ -7,11 +7,10 @@ type VideosInfo struct {
 	Message string
 }
 
-type VideoDetails struct {
+type CommentsInfo struct {
 	Comments []*Comment
-	Title    string
-	Author   string
 	User     string
+	Message  string
 }
 
 // Data model
@@ -28,6 +27,7 @@ type VideoInfo struct {
 	Video_title string
 	Create_time string
 	Viewed      int
+	Cover       string
 }
 
 type Comment struct {

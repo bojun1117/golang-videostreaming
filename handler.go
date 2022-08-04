@@ -3,7 +3,6 @@ package main
 import (
 	"html/template"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -103,9 +102,9 @@ func userVideos(w http.ResponseWriter, r *http.Request, p httprouter.Params) { /
 		http.Redirect(w, r, "videos", http.StatusFound)
 	}
 
-	t, e := template.ParseFiles(TEMPLATE_DIR + "uservideos.html")
+	t, e := template.ParseFiles(TEMPLATE_DIR + "user.html")
 	if e != nil {
-		log.Printf("Parsing template uservideos.html error: %s", e)
+		log.Printf("Parsing template user.html error: %s", e)
 		return
 	}
 
@@ -122,30 +121,40 @@ func userVideos(w http.ResponseWriter, r *http.Request, p httprouter.Params) { /
 }
 
 func videoInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //單一影片頁面
-	user := session.ValidateUser(w, r)
 	vid, _ := strconv.Atoi(p.ByName("vid"))
 	vbody, err := dbops.GetVideoInfo(vid)
 	if err != nil {
 		log.Printf("Error in getvideoinfo: %s", err)
 	}
+
+	streamHandler(w, r, vbody.Video_title)
+}
+
+func commentInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //評論頁面
+	user := session.ValidateUser(w, r)
+	var message string
+	em, err := r.Cookie("messagecookie")
+	if err == nil {
+		message, _ = url.QueryUnescape(em.Value)
+	}
+	vid, _ := strconv.Atoi(p.ByName("vid"))
 	cbody, err := dbops.ListComments(vid)
 	if err != nil {
 		log.Printf("Error in ShowComments: %s", err)
 	}
-	vdi := &defs.VideoDetails{
+	ci := &defs.CommentsInfo{
 		Comments: cbody,
-		Title:    vbody.Video_title,
-		Author:   vbody.Author_name,
 		User:     user,
+		Message:  message,
 	}
 
-	t, e := template.ParseFiles(TEMPLATE_DIR + "video.html")
+	t, e := template.ParseFiles(TEMPLATE_DIR + "comment.html")
 	if e != nil {
-		log.Printf("Parsing template video.html error: %s", e)
+		log.Printf("Parsing template comment.html error: %s", e)
 		return
 	}
 
-	t.Execute(w, vdi)
+	t.Execute(w, ci)
 }
 
 func upload(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //上傳頁面
@@ -224,13 +233,15 @@ func postComment(w http.ResponseWriter, r *http.Request, p httprouter.Params) { 
 	user := session.ValidateUser(w, r)
 	h := p.ByName("vid")
 	if user == "" {
-		log.Printf("not a user")
+		message := "請先登入"
+		cookieMessage(message, w)
 		http.Redirect(w, r, h, http.StatusFound)
 		return
 	}
 	content := r.PostFormValue("content")
 	if content == "" {
-		log.Printf("blank")
+		message := "不可空白"
+		cookieMessage(message, w)
 		http.Redirect(w, r, h, http.StatusFound)
 		return
 	}
@@ -254,8 +265,9 @@ func deleteComment(w http.ResponseWriter, r *http.Request, p httprouter.Params) 
 
 func uploadVideo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //上傳影片
 	title := r.PostFormValue("title")
+	cover := r.PostFormValue("cover")
 	user := session.ValidateUser(w, r)
-	err := dbops.AddNewVideo(user, title)
+	err := dbops.AddNewVideo(user, title, cover)
 	if err != nil {
 		message := "影片名稱重複"
 		cookieMessage(message, w)
@@ -264,7 +276,7 @@ func uploadVideo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { 
 	}
 
 	r.ParseMultipartForm(50)
-	video, handler, err := r.FormFile("video")
+	video, _, err := r.FormFile("video")
 	if err != nil {
 		message := "影片上傳失敗"
 		cookieMessage(message, w)
@@ -272,7 +284,7 @@ func uploadVideo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { 
 		return
 	}
 	defer video.Close()
-	v, err := os.OpenFile("videos/"+handler.Filename, os.O_RDONLY|os.O_CREATE, 0666)
+	v, err := os.OpenFile("videos/"+title+".mp4", os.O_RDONLY|os.O_CREATE, 0666)
 	if err != nil {
 		message := "影片上傳失敗"
 		cookieMessage(message, w)
@@ -282,74 +294,20 @@ func uploadVideo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { 
 	defer v.Close()
 	io.Copy(v, video)
 
-	cover, handler, err := r.FormFile("cover")
-	if err != nil {
-		message := "封面上傳失敗"
-		cookieMessage(message, w)
-		http.Redirect(w, r, "user", http.StatusFound)
-		return
-	}
-	defer video.Close()
-	c, err := os.OpenFile("videos/"+handler.Filename, os.O_RDONLY|os.O_CREATE, 0666)
-	if err != nil {
-		message := "封面上傳失敗"
-		cookieMessage(message, w)
-		http.Redirect(w, r, "user", http.StatusFound)
-		return
-	}
-	defer c.Close()
-	io.Copy(c, cover)
-
 	http.Redirect(w, r, "user", http.StatusFound)
 }
 
 //streaming
-const (
-	VIDEO_DIR       = "./videos/"
-	MAX_UPLOAD_SIZE = 50 * 1024 * 1024 // 50MB
-)
+const VIDEO_DIR = "./videos/"
 
-func streamHandler(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	vid := p.ByName("vid")
-	vl := VIDEO_DIR + vid
-	video, err := os.Open(vl)
+func streamHandler(w http.ResponseWriter, r *http.Request, vname string) {
+	vpath := VIDEO_DIR + vname + ".mp4"
+	video, err := os.Open(vpath)
 	if err != nil {
 		log.Printf("Error when try to open file: %v", err)
-
 		return
 	}
-	w.Header().Set("Content-Type", "video/mp4")
+
 	http.ServeContent(w, r, "", time.Now(), video)
 	defer video.Close()
-}
-
-func uploadHandler(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	r.Body = http.MaxBytesReader(w, r.Body, MAX_UPLOAD_SIZE)
-	if err := r.ParseMultipartForm(MAX_UPLOAD_SIZE); err != nil {
-
-		return
-	}
-
-	file, _, err := r.FormFile("file")
-	if err != nil {
-
-		return
-	}
-
-	data, err := ioutil.ReadAll(file)
-	if err != nil {
-		log.Printf("Read file error: %v", err)
-
-	}
-
-	fn := p.ByName("vid-id")
-	err = ioutil.WriteFile(VIDEO_DIR+fn, data, 0666)
-	if err != nil {
-		log.Printf("Write file error: %v", err)
-
-		return
-	}
-
-	w.WriteHeader(http.StatusCreated)
-	io.WriteString(w, "Upload successfully")
 }
