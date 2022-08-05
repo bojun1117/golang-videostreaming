@@ -126,7 +126,10 @@ func videoInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //
 	if err != nil {
 		log.Printf("Error in getvideoinfo: %s", err)
 	}
-
+	err = dbops.AddViewCount(vid, vbody.Viewed)
+	if err != nil {
+		log.Printf("Error in addViewCount: %s", err)
+	}
 	streamHandler(w, r, vbody.Video_title)
 }
 

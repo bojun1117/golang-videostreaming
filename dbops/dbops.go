@@ -82,16 +82,17 @@ func AddNewVideo(author_name string, title string, cover string) error { //新�
 }
 
 func GetVideoInfo(vid int) (*defs.VideoInfo, error) { //取得單一影片資訊
-	stmtOut, err := db.Prepare("SELECT author_name, video_title FROM video_info WHERE video_id=$1")
+	stmtOut, err := db.Prepare("SELECT video_title, viewed FROM video_info WHERE video_id=$1")
 	if err != nil {
 		return nil, err
 	}
-	var author, title string
-	err = stmtOut.QueryRow(vid).Scan(&author, &title)
+	var title string
+	var view int
+	err = stmtOut.QueryRow(vid).Scan(&title, &view)
 	res := &defs.VideoInfo{
 		Video_id:    vid,
-		Author_name: author,
 		Video_title: title,
+		Viewed:      view,
 	}
 	return res, nil
 }
@@ -101,7 +102,7 @@ func ListVideoInfo(username string) ([]*defs.VideoInfo, error) { //顯示影片
 	var rows *sql.Rows
 	var stmtOut *sql.Stmt
 	if username == "" { //所有
-		stmtOut, err = db.Prepare("SELECT * FROM video_info ORDER BY create_time DESC")
+		stmtOut, err = db.Prepare("SELECT * FROM video_info ORDER BY viewed DESC")
 		if err != nil {
 			return res, err
 		}
@@ -110,7 +111,7 @@ func ListVideoInfo(username string) ([]*defs.VideoInfo, error) { //顯示影片
 			return res, err
 		}
 	} else { //僅使用者上傳
-		stmtOut, err = db.Prepare("SELECT * FROM video_info WHERE author_name=$1 ORDER BY create_time DESC")
+		stmtOut, err = db.Prepare("SELECT * FROM video_info WHERE author_name=$1 ORDER BY viewed DESC")
 		if err != nil {
 			return res, err
 		}
@@ -142,7 +143,7 @@ func ListVideoInfo(username string) ([]*defs.VideoInfo, error) { //顯示影片
 
 func ListSpecifyVideos(q string) ([]*defs.VideoInfo, error) { //搜尋特定結果
 	var res []*defs.VideoInfo
-	stmtOut, err := db.Prepare("SELECT * FROM video_info WHERE video_title LIKE $1")
+	stmtOut, err := db.Prepare("SELECT * FROM video_info WHERE video_title LIKE $1 ORDER BY viewed DESC limit 24")
 	if err != nil {
 		return res, err
 	}
@@ -151,9 +152,9 @@ func ListSpecifyVideos(q string) ([]*defs.VideoInfo, error) { //搜尋特定結�
 		return res, err
 	}
 	for rows.Next() {
-		var author, title, ctime,cover string
+		var author, title, ctime, cover string
 		var id, view int
-		if err := rows.Scan(&id, &author, &title, &ctime, &view,&cover); err != nil {
+		if err := rows.Scan(&id, &author, &title, &ctime, &view, &cover); err != nil {
 			return res, err
 		}
 		ctime = ctime[:10]
@@ -163,7 +164,7 @@ func ListSpecifyVideos(q string) ([]*defs.VideoInfo, error) { //搜尋特定結�
 			Video_title: title,
 			Create_time: ctime,
 			Viewed:      view,
-			Cover: cover,
+			Cover:       cover,
 		}
 		res = append(res, vi)
 	}
@@ -236,5 +237,19 @@ func DeleteCommentInfo(cid int, uname string) error { //刪除評論
 		return err
 	}
 	defer stmtDel.Close()
+	return nil
+}
+
+func AddViewCount(vid int, viewed int) error { //點率加一
+	stmout, err := db.Prepare("Update video_info SET viewed=$1 WHERE video_id=$2")
+	if err != nil {
+		return err
+	}
+	viewed++
+	_, err = stmout.Exec(viewed, vid)
+	if err != nil {
+		return err
+	}
+	defer stmout.Close()
 	return nil
 }

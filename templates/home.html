@@ -79,10 +79,13 @@
                                 <div class="text-center">
                                     <a class="btn btn-outline-dark mt-auto" href="videos/{{.Video_id}}">View</a>
                                 </div>
-                                <div  class="text-end">
-                                    <a href="comments/{{.Video_id}}" class="link-secondary">
-                                        <i class="bi bi-card-text"></i>
-                                    </a>
+                                <div>
+                                    <i class="bi bi-eye"></i> {{.Viewed}}
+                                    <div class="text-end" style="float: right;">
+                                        <a href="comments/{{.Video_id}}" class="link-secondary">
+                                            <i class="bi bi-card-text"></i>
+                                        </a>
+                                    </div>
                                 </div>
                                 
                             </div>
