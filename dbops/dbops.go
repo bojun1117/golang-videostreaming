@@ -2,6 +2,7 @@ package dbops
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"video-streaming/defs"
 
@@ -13,8 +14,16 @@ var (
 	err error
 )
 
+const (
+	// Initialize connection constants.
+	HOST     = "database-18.cqp6xln0cu6w.ap-northeast-1.rds.amazonaws.com"
+	DATABASE = "vsproject"
+	USER     = "postgres"
+	PASSWORD = "eric1117"
+)
+
 func init() {
-	connStr := "user=postgres password=eric dbname=postgres sslmode=disable"
+	connStr := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable", HOST, USER, PASSWORD, DATABASE)
 	db, err = sql.Open("postgres", connStr)
 	if err != nil {
 		log.Fatal(err)
@@ -69,7 +78,7 @@ func GetUser(user_name string) (*defs.User, error) { //取得使用者資料
 }
 
 func AddNewVideo(author_name string, title string, cover string) error { //新增影片
-	stmtIns, err := db.Prepare("INSERT INTO video_info (author_name, video_title, create_time, viewed, cover) VALUES($1, $2, NOW(), 0, $3)")
+	stmtIns, err := db.Prepare("INSERT INTO videos (author_name, video_title, create_time, viewed, cover) VALUES($1, $2, NOW(), 0, $3)")
 	if err != nil {
 		return err
 	}
@@ -82,7 +91,7 @@ func AddNewVideo(author_name string, title string, cover string) error { //新�
 }
 
 func GetVideoInfo(vid int) (*defs.VideoInfo, error) { //取得單一影片資訊
-	stmtOut, err := db.Prepare("SELECT video_title, viewed FROM video_info WHERE video_id=$1")
+	stmtOut, err := db.Prepare("SELECT video_title, viewed FROM videos WHERE video_id=$1")
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +111,7 @@ func ListVideoInfo(username string) ([]*defs.VideoInfo, error) { //顯示影片
 	var rows *sql.Rows
 	var stmtOut *sql.Stmt
 	if username == "" { //所有
-		stmtOut, err = db.Prepare("SELECT * FROM video_info ORDER BY viewed DESC")
+		stmtOut, err = db.Prepare("SELECT * FROM videos ORDER BY viewed DESC")
 		if err != nil {
 			return res, err
 		}
@@ -111,7 +120,7 @@ func ListVideoInfo(username string) ([]*defs.VideoInfo, error) { //顯示影片
 			return res, err
 		}
 	} else { //僅使用者上傳
-		stmtOut, err = db.Prepare("SELECT * FROM video_info WHERE author_name=$1 ORDER BY viewed DESC")
+		stmtOut, err = db.Prepare("SELECT * FROM videos WHERE author_name=$1 ORDER BY viewed DESC")
 		if err != nil {
 			return res, err
 		}
@@ -143,7 +152,7 @@ func ListVideoInfo(username string) ([]*defs.VideoInfo, error) { //顯示影片
 
 func ListSpecifyVideos(q string) ([]*defs.VideoInfo, error) { //搜尋特定結果
 	var res []*defs.VideoInfo
-	stmtOut, err := db.Prepare("SELECT * FROM video_info WHERE video_title LIKE $1 ORDER BY viewed DESC limit 24")
+	stmtOut, err := db.Prepare("SELECT * FROM videos WHERE video_title LIKE $1 ORDER BY viewed DESC limit 24")
 	if err != nil {
 		return res, err
 	}
@@ -173,15 +182,24 @@ func ListSpecifyVideos(q string) ([]*defs.VideoInfo, error) { //搜尋特定結�
 }
 
 func DeleteVideoInfo(vid int, uname string) error { //刪除影片
-	stmtDel, err := db.Prepare("DELETE FROM video_info WHERE video_id = $1 and author_name = $2")
+	stmtDelv, err := db.Prepare("DELETE FROM videos WHERE video_id = $1 and author_name = $2")
 	if err != nil {
 		return err
 	}
-	_, err = stmtDel.Exec(vid, uname)
+	_, err = stmtDelv.Exec(vid, uname)
 	if err != nil {
 		return err
 	}
-	defer stmtDel.Close()
+	defer stmtDelv.Close()
+	stmtDelc, err := db.Prepare("DELETE FROM comments WHERE video_id = $1")
+	if err != nil {
+		return err
+	}
+	_, err = stmtDelc.Exec(vid)
+	if err != nil {
+		return err
+	}
+	defer stmtDelc.Close()
 	return nil
 }
 
@@ -241,7 +259,7 @@ func DeleteCommentInfo(cid int, uname string) error { //刪除評論
 }
 
 func AddViewCount(vid int, viewed int) error { //點率加一
-	stmout, err := db.Prepare("Update video_info SET viewed=$1 WHERE video_id=$2")
+	stmout, err := db.Prepare("Update videos SET viewed=$1 WHERE video_id=$2")
 	if err != nil {
 		return err
 	}
