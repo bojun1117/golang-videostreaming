@@ -1,6 +1,7 @@
 package main
 
 import (
+	//"context"
 	"html/template"
 	"io"
 	"log"
@@ -13,6 +14,7 @@ import (
 	"video-streaming/dbops"
 	"video-streaming/defs"
 	"video-streaming/session"
+	//"video-streaming/videos"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -26,7 +28,6 @@ func homeHandler(w http.ResponseWriter, r *http.Request, p httprouter.Params) { 
 	if err == nil {
 		message, _ = url.QueryUnescape(em.Value)
 	}
-
 	user := session.ValidateUser(w, r)
 
 	t, e := template.ParseFiles(TEMPLATE_DIR + "home.html")
@@ -211,7 +212,6 @@ func loginCredential(w http.ResponseWriter, r *http.Request, p httprouter.Params
 	}
 	session.RegisterSessionInfo(w, r, Username, user_id)
 	http.Redirect(w, r, "./videos", http.StatusFound)
-	return
 }
 
 func logout(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //登出
@@ -301,16 +301,15 @@ func uploadVideo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { 
 }
 
 //streaming
-const VIDEO_DIR = "./videos/"
-
 func streamHandler(w http.ResponseWriter, r *http.Request, vname string) {
-	vpath := VIDEO_DIR + vname + ".mp4"
+	vpath := "videos/" + vname + ".mp4"
 	video, err := os.Open(vpath)
 	if err != nil {
 		log.Printf("Error when try to open file: %v", err)
 		return
 	}
-
+	//ctx := context.TODO()
+	//client := videos.NewS3Client(ctx)
+	//video := videos.Downloadfile(ctx, client, "videos/"+vname+".mp4")
 	http.ServeContent(w, r, "", time.Now(), video)
-	defer video.Close()
 }
