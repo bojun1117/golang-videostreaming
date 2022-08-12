@@ -90,6 +90,20 @@ func AddNewVideo(author_name string, title string, cover string) error { //新�
 	return nil
 }
 
+func CheckNewVideo(author_name string, title string) bool { //檢查影片是否重複
+	stmtIns, err := db.Prepare("SELECT EXISTS(SELECT * FROM videos WHERE author_name=$1 and video_title=$2)")
+	if err != nil {
+		return true
+	}
+	var exist bool
+	err = stmtIns.QueryRow(author_name, title).Scan(&exist)
+	if err != nil {
+		return true
+	}
+	defer stmtIns.Close()
+	return exist
+}
+
 func GetVideoInfo(vid int) (*defs.VideoInfo, error) { //取得單一影片資訊
 	stmtOut, err := db.Prepare("SELECT video_title, viewed FROM videos WHERE video_id=$1")
 	if err != nil {
@@ -98,6 +112,9 @@ func GetVideoInfo(vid int) (*defs.VideoInfo, error) { //取得單一影片資訊
 	var title string
 	var view int
 	err = stmtOut.QueryRow(vid).Scan(&title, &view)
+	if err != nil {
+		return nil, err
+	}
 	res := &defs.VideoInfo{
 		Video_id:    vid,
 		Video_title: title,
@@ -217,8 +234,11 @@ func AddNewComments(vid int, user_name string, content string) error { //新增�
 }
 
 func ListComments(vid int) ([]*defs.Comment, error) { //顯示評論
-	stmtOut, err := db.Prepare("SELECT * from comments where video_id=$1")
 	var res []*defs.Comment
+	stmtOut, err := db.Prepare("SELECT * from comments where video_id=$1")
+	if err != nil {
+		return res, err
+	}
 	rows, err := stmtOut.Query(vid)
 	if err != nil {
 		return res, err

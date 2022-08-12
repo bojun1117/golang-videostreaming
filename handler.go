@@ -1,20 +1,18 @@
 package main
 
 import (
-	//"context"
+	"context"
 	"html/template"
-	"io"
 	"log"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
 	"time"
 
 	"video-streaming/dbops"
 	"video-streaming/defs"
 	"video-streaming/session"
-	//"video-streaming/videos"
+	"video-streaming/videos"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -229,6 +227,7 @@ func deleteVideo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { 
 	if err != nil {
 		log.Printf("error")
 	}
+
 	http.Redirect(w, r, "../user", http.StatusFound)
 }
 
@@ -270,8 +269,8 @@ func uploadVideo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { 
 	title := r.PostFormValue("title")
 	cover := r.PostFormValue("cover")
 	user := session.ValidateUser(w, r)
-	err := dbops.AddNewVideo(user, title, cover)
-	if err != nil {
+	exist := dbops.CheckNewVideo(user, title)
+	if exist{
 		message := "影片名稱重複"
 		cookieMessage(message, w)
 		http.Redirect(w, r, "upload", http.StatusFound)
@@ -287,29 +286,22 @@ func uploadVideo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { 
 		return
 	}
 	defer video.Close()
-	v, err := os.OpenFile("videos/"+title+".mp4", os.O_RDONLY|os.O_CREATE, 0666)
+
+	ctx := context.TODO()
+	client := videos.NewS3Client(ctx)
+	err = videos.Uploadfile(ctx, client, title, video)
 	if err != nil {
-		message := "影片上傳失敗"
-		cookieMessage(message, w)
-		http.Redirect(w, r, "user", http.StatusFound)
-		return
+		log.Printf("error: %v", err)
 	}
-	defer v.Close()
-	io.Copy(v, video)
+	dbops.AddNewVideo(user, title, cover)
 
 	http.Redirect(w, r, "user", http.StatusFound)
 }
 
 //streaming
 func streamHandler(w http.ResponseWriter, r *http.Request, vname string) {
-	vpath := "videos/" + vname + ".mp4"
-	video, err := os.Open(vpath)
-	if err != nil {
-		log.Printf("Error when try to open file: %v", err)
-		return
-	}
-	//ctx := context.TODO()
-	//client := videos.NewS3Client(ctx)
-	//video := videos.Downloadfile(ctx, client, "videos/"+vname+".mp4")
-	http.ServeContent(w, r, "", time.Now(), video)
+	ctx := context.TODO()
+	client := videos.NewS3Client(ctx)
+	v := videos.Downloadfile(ctx, client, "videos/"+vname+".mp4")
+	http.ServeContent(w, r, "", time.Now(), v)
 }

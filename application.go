@@ -47,6 +47,6 @@ func RegisterHandlers() *httprouter.Router {
 
 func main() {
 	r := RegisterHandlers()
-	mh := NewMiddleWareHandler(r, 2)
+	mh := NewMiddleWareHandler(r, 100)
 	http.ListenAndServe(":5000", mh)
 }

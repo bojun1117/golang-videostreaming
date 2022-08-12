@@ -38,6 +38,7 @@ type Comment struct {
 	Record_time string
 }
 
+//session
 type SessionInfo struct {
 	User_id   int
 	User_name string

@@ -22,8 +22,16 @@ func NewS3Client(ctx context.Context) *s3.Client {
 	return s3.NewFromConfig(cfg)
 }
 
-func Uploadfile(ctx context.Context, client *s3.Client, bucket string) {
-
+func Uploadfile(ctx context.Context, client *s3.Client, filename string, file io.Reader) error {
+	_, err := client.PutObject(ctx, &s3.PutObjectInput{
+		Bucket: aws.String("elasticbeanstalk-ap-northeast-1-271366295554"),
+		Key:    aws.String("videos/" + filename + ".mp4"),
+		Body:   file,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func Downloadfile(ctx context.Context, client *s3.Client, key string) *bytes.Reader {
@@ -35,11 +43,10 @@ func Downloadfile(ctx context.Context, client *s3.Client, key string) *bytes.Rea
 		log.Printf("error:%v", err)
 	}
 	defer out.Body.Close()
-
 	buff, err := io.ReadAll(out.Body)
 	if err != nil {
-		log.Printf("error:%v", err)
+		log.Printf("error: %v", err)
 	}
-	reader := bytes.NewReader(buff)
-	return reader
+	video := bytes.NewReader(buff)
+	return video
 }
