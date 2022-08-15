@@ -28,6 +28,7 @@ func (m middleWareHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func RegisterHandlers() *httprouter.Router {
 	router := httprouter.New()
+	router.GET("/",guidetohome)
 	router.GET("/videos", homeHandler)
 	router.GET("/create", createUser)
 	router.POST("/create", userInfo)

@@ -20,6 +20,10 @@ import (
 //templates
 const TEMPLATE_DIR = "./templates/"
 
+func guidetohome(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //根目錄
+	http.Redirect(w, r, "./videos", http.StatusFound)
+}
+
 func homeHandler(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //首頁
 	var message string
 	em, err := r.Cookie("messagecookie")
@@ -270,7 +274,7 @@ func uploadVideo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { 
 	cover := r.PostFormValue("cover")
 	user := session.ValidateUser(w, r)
 	exist := dbops.CheckNewVideo(user, title)
-	if exist{
+	if exist {
 		message := "影片名稱重複"
 		cookieMessage(message, w)
 		http.Redirect(w, r, "upload", http.StatusFound)
