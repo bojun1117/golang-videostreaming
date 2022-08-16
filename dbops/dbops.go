@@ -6,7 +6,7 @@ import (
 	"log"
 	"video-streaming/defs"
 
-	_ "github.com/lib/pq"
+	"github.com/lib/pq"
 )
 
 var (
@@ -208,6 +208,7 @@ func DeleteVideoInfo(vid int, uname string) error { //刪除影片
 		return err
 	}
 	defer stmtDelv.Close()
+
 	stmtDelc, err := db.Prepare("DELETE FROM comments WHERE video_id = $1")
 	if err != nil {
 		return err
@@ -217,6 +218,17 @@ func DeleteVideoInfo(vid int, uname string) error { //刪除影片
 		return err
 	}
 	defer stmtDelc.Close()
+
+	stmtDell, err := db.Prepare("DELETE FROM collects WHERE video_id = $1")
+	if err != nil {
+		return err
+	}
+	_, err = stmtDell.Exec(vid)
+	if err != nil {
+		return err
+	}
+	defer stmtDell.Close()
+	
 	return nil
 }
 
@@ -235,7 +247,7 @@ func AddNewComments(vid int, user_name string, content string) error { //新增�
 
 func ListComments(vid int) ([]*defs.Comment, error) { //顯示評論
 	var res []*defs.Comment
-	stmtOut, err := db.Prepare("SELECT * from comments where video_id=$1")
+	stmtOut, err := db.Prepare("SELECT * from comments where video_id=$1 limit 20")
 	if err != nil {
 		return res, err
 	}
@@ -290,4 +302,82 @@ func AddViewCount(vid int, viewed int) error { //點率加一
 	}
 	defer stmout.Close()
 	return nil
+}
+
+func AddCollectionInfo(vid int, username string) error { //加入收藏
+	stmtIns, err := db.Prepare("INSERT INTO collects (video_id,user_name) VALUES ($1, $2)")
+	if err != nil {
+		return err
+	}
+	_, err = stmtIns.Exec(vid, username)
+	if err != nil {
+		return err
+	}
+	defer stmtIns.Close()
+	return nil
+}
+
+func RemoveCollectionInfo(vid int, username string) error { //移除收藏
+	stmtDel, err := db.Prepare("DELETE FROM collects WHERE video_id = $1 and user_name = $2")
+	if err != nil {
+		return err
+	}
+	_, err = stmtDel.Exec(vid, username)
+	if err != nil {
+		return err
+	}
+	defer stmtDel.Close()
+	return nil
+}
+
+func GetCollectionVid(username string) ([]int, error) { //取得收藏影片id
+	var cv []int
+	stmtOut, err := db.Prepare("SELECT video_id FROM collects WHERE user_name=$1")
+	if err != nil {
+		return cv, err
+	}
+	rows, err := stmtOut.Query(username)
+	if err != nil {
+		return cv, err
+	}
+	for rows.Next() {
+		var id int
+		if err := rows.Scan(&id); err != nil {
+			return cv, err
+		}
+		cv = append(cv, id)
+	}
+	defer stmtOut.Close()
+	return cv, nil
+}
+
+func ListCollectionInfo(vid []int) ([]*defs.VideoInfo, error){ //顯示收藏影片
+	var res []*defs.VideoInfo
+	stmtOut, err := db.Prepare("SELECT * FROM videos WHERE video_id=ANY($1)")
+	if err != nil {
+		return res, err
+	}
+	rows, err := stmtOut.Query(pq.Array(vid))
+	if err != nil {
+		return res, err
+	}
+	for rows.Next() {
+		var author, title, ctime, cover string
+		var id, view int
+		if err := rows.Scan(&id, &author, &title, &ctime, &view, &cover); err != nil {
+			return res, err
+		}
+		ctime = ctime[:10]
+		vi := &defs.VideoInfo{
+			Video_id:    id,
+			Author_name: author,
+			Video_title: title,
+			Create_time: ctime,
+			Viewed:      view,
+			Cover:       cover,
+		}
+		res = append(res, vi)
+	}
+	defer stmtOut.Close()
+	return res, nil
 }

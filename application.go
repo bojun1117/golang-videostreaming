@@ -43,6 +43,9 @@ func RegisterHandlers() *httprouter.Router {
 	router.GET("/comments/:vid/:cid", deleteComment)
 	router.GET("/upload", upload)
 	router.POST("/upload", uploadVideo)
+	router.GET("/favor", collection)
+	router.GET("/addlike/:vid", addcollection)
+	router.GET("/favor/:vid",deletecollection)
 	return router
 }
 

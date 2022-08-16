@@ -185,6 +185,37 @@ func upload(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //上
 	t.Execute(w, message)
 }
 
+func collection(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //收藏頁面
+	user := session.ValidateUser(w, r)
+	if user == "" {
+		log.Printf("not member")
+		http.Redirect(w, r, "videos", http.StatusFound)
+	}
+	message := "true"
+	t, e := template.ParseFiles(TEMPLATE_DIR + "user.html")
+	if e != nil {
+		log.Printf("Parsing template user.html error: %s", e)
+		return
+	}
+
+	cv, err := dbops.GetCollectionVid(user)
+	if err != nil {
+		log.Printf("error: %v", err)
+	}
+	vs, err := dbops.ListCollectionInfo(cv)
+	if err != nil {
+		log.Printf("error: %v", err)
+	}
+
+	vsi := &defs.VideosInfo{
+		Videos:  vs,
+		User:    user,
+		Message: message,
+	}
+
+	t.Execute(w, vsi)
+}
+
 //database
 func userInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //註冊
 	username := r.PostFormValue("user")
@@ -300,6 +331,37 @@ func uploadVideo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { 
 	dbops.AddNewVideo(user, title, cover)
 
 	http.Redirect(w, r, "user", http.StatusFound)
+}
+
+func addcollection(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //加入收藏
+	user := session.ValidateUser(w, r)
+	if user == ""{
+		message := "請先登入"
+		cookieMessage(message, w)
+		http.Redirect(w, r, "../videos", http.StatusFound)
+		return
+	}
+	vid, _ := strconv.Atoi(p.ByName("vid"))
+	err := dbops.AddCollectionInfo(vid, user)
+	if err != nil {
+		message := "重複加入收藏"
+		cookieMessage(message, w)
+		http.Redirect(w, r, "../videos", http.StatusFound)
+		return
+	}
+	message := "成功加入收藏"
+	cookieMessage(message, w)
+	http.Redirect(w, r, "../videos", http.StatusFound)
+}
+
+func deletecollection(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //移除收藏
+	user := session.ValidateUser(w, r)
+	vid, _ := strconv.Atoi(p.ByName("vid"))
+	err := dbops.RemoveCollectionInfo(vid, user)
+	if err != nil {
+		log.Printf("error: %v", err)
+	}
+	http.Redirect(w, r, "../favor", http.StatusFound)
 }
 
 //streaming

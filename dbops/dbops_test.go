@@ -64,3 +64,17 @@ func TestDeleteComments(t *testing.T) {
 		t.Errorf("Error of DeleteComments: %v", err)
 	}
 }
+
+func TestAddCollection(t *testing.T) {
+	err := AddCollectionInfo(7,"bojun")
+	if err != nil {
+		t.Errorf("Error of AddCollectionInfo: %v", err)
+	}
+}
+
+func TestRemoveCollection(t *testing.T) {
+	err := RemoveCollectionInfo(7,"bojun")
+	if err != nil {
+		t.Errorf("Error of AddCollectionInfo: %v", err)
+	}
+}
