@@ -11,6 +11,7 @@ import (
 
 	"video-streaming/dbops"
 	"video-streaming/defs"
+	"video-streaming/redis"
 	"video-streaming/session"
 	"video-streaming/videos"
 
@@ -124,16 +125,25 @@ func userVideos(w http.ResponseWriter, r *http.Request, p httprouter.Params) { /
 }
 
 func videoInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //單一影片頁面
-	vid, _ := strconv.Atoi(p.ByName("vid"))
-	vbody, err := dbops.GetVideoInfo(vid)
-	if err != nil {
-		log.Printf("Error in getvideoinfo: %s", err)
+	var vid int
+	video_title := redis.Check(p.ByName("vid"))
+	if video_title == "keynull" { //不在redis
+		vid, _ = strconv.Atoi(p.ByName("vid"))
+		vbody, err := dbops.GetVideoInfo(vid)
+		if err != nil {
+			log.Printf("Error in getvideoinfo: %s", err)
+		}
+		video_title = vbody.Video_title
+		err = redis.Setkey(p.ByName("vid"), video_title) //加入redis
+		if err != nil {
+			log.Printf("error: %v", err)
+		}
 	}
-	err = dbops.AddViewCount(vid, vbody.Viewed)
+	err := dbops.AddViewCount(vid)
 	if err != nil {
 		log.Printf("Error in addViewCount: %s", err)
 	}
-	streamHandler(w, r, vbody.Video_title)
+	streamHandler(w, r, video_title)
 }
 
 func commentInfo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //評論頁面
@@ -312,7 +322,7 @@ func uploadVideo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { 
 		return
 	}
 
-	r.ParseMultipartForm(50)
+	r.ParseMultipartForm(100) //影片大小限制
 	video, _, err := r.FormFile("video")
 	if err != nil {
 		message := "影片上傳失敗"
@@ -335,7 +345,7 @@ func uploadVideo(w http.ResponseWriter, r *http.Request, p httprouter.Params) { 
 
 func addcollection(w http.ResponseWriter, r *http.Request, p httprouter.Params) { //加入收藏
 	user := session.ValidateUser(w, r)
-	if user == ""{
+	if user == "" {
 		message := "請先登入"
 		cookieMessage(message, w)
 		http.Redirect(w, r, "../videos", http.StatusFound)

@@ -228,7 +228,7 @@ func DeleteVideoInfo(vid int, uname string) error { //刪除影片
 		return err
 	}
 	defer stmtDell.Close()
-	
+
 	return nil
 }
 
@@ -290,13 +290,12 @@ func DeleteCommentInfo(cid int, uname string) error { //刪除評論
 	return nil
 }
 
-func AddViewCount(vid int, viewed int) error { //點率加一
-	stmout, err := db.Prepare("Update videos SET viewed=$1 WHERE video_id=$2")
+func AddViewCount(vid int) error { //點率加一
+	stmout, err := db.Prepare("Update videos SET viewed=viewed + 1 WHERE video_id=$1")
 	if err != nil {
 		return err
 	}
-	viewed++
-	_, err = stmout.Exec(viewed, vid)
+	_, err = stmout.Exec(vid)
 	if err != nil {
 		return err
 	}
@@ -351,7 +350,7 @@ func GetCollectionVid(username string) ([]int, error) { //取得收藏影片id
 	return cv, nil
 }
 
-func ListCollectionInfo(vid []int) ([]*defs.VideoInfo, error){ //顯示收藏影片
+func ListCollectionInfo(vid []int) ([]*defs.VideoInfo, error) { //顯示收藏影片
 	var res []*defs.VideoInfo
 	stmtOut, err := db.Prepare("SELECT * FROM videos WHERE video_id=ANY($1)")
 	if err != nil {
