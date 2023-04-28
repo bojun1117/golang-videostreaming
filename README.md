@@ -13,7 +13,7 @@ http://golangvideostreaming-env.eba-zvpmmryb.ap-northeast-1.elasticbeanstalk.com
 "database/sql"
 "github.com/lib/pq"
 ```
-* authentication : Session
+* authentication : Session + C
 ```
 "github.com/gorilla/sessions"
 ```
