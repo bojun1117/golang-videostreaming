@@ -26,7 +26,7 @@ http://golangvideostreaming-env.eba-zvpmmryb.ap-northeast-1.elasticbeanstalk.com
 "github.com/aws/aws-sdk-go-v2/config"
 "github.com/aws/aws-sdk-go-v2/service/s3"
 ```
-* cache : redis/Amazon ElastiCache
+* cache : Redis/Amazon ElastiCache
 ```
 "github.com/go-redis/redis/v8"
 ```
