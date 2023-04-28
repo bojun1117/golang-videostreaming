@@ -13,4 +13,5 @@ http://golangvideostreaming-env.eba-zvpmmryb.ap-northeast-1.elasticbeanstalk.com
 "github.com/lib/pq"
 ```
 * authentication : session
+
 `"github.com/gorilla/sessions"`
