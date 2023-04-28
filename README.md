@@ -33,6 +33,10 @@ http://golangvideostreaming-env.eba-zvpmmryb.ap-northeast-1.elasticbeanstalk.com
 * deploy : Elastic Beanstalk
 
 
+
+
+
+
 ### 基本功能
 
 * thumbs-up : 收藏/收藏影片
