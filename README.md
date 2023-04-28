@@ -4,7 +4,7 @@
 http://golangvideostreaming-env.eba-zvpmmryb.ap-northeast-1.elasticbeanstalk.com/
 
 
-### 基本介紹
+### 使用套件
 
 
 * database : Postgresql/AWS RDS
@@ -31,3 +31,8 @@ http://golangvideostreaming-env.eba-zvpmmryb.ap-northeast-1.elasticbeanstalk.com
 "github.com/go-redis/redis/v8"
 ```
 * deploy : Elastic Beanstalk
+
+
+### 基本功能
+
+![GITHUB]( [圖片網址](https://user-images.githubusercontent.com/98681/91365119-402cdc00-e7b5-11ea-9a2c-e1a03aed21c3.png) "收藏")
