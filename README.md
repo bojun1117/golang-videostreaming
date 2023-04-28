@@ -35,4 +35,9 @@ http://golangvideostreaming-env.eba-zvpmmryb.ap-northeast-1.elasticbeanstalk.com
 
 ### 基本功能
 
-!( [圖片網址](https://user-images.githubusercontent.com/98681/91365119-402cdc00-e7b5-11ea-9a2c-e1a03aed21c3.png) "收藏")
+* thumbs-up : 收藏/收藏影片
+* chat-square-text : 留言
+* file-person : 我的影片
+* file-earmark-arrow-up : 上傳
+* trash : 刪除影片
+* heartbreak : 移除收藏
