@@ -32,10 +32,7 @@ http://golangvideostreaming-env.eba-zvpmmryb.ap-northeast-1.elasticbeanstalk.com
 ```
 * deploy : Elastic Beanstalk
 
-
-
-
-
+****
 
 ### 基本功能
 
